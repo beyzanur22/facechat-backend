@@ -1,0 +1,27 @@
+{
+  "name": "facechat-backend",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "start": "knex --knexfile src/db/knexfile.js migrate:latest && node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "knex --knexfile src/db/knexfile.js migrate:latest",
+    "migrate:rollback": "knex --knexfile src/db/knexfile.js migrate:rollback",
+    "bots": "node bots/simulate.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "knex": "^3.1.0",
+    "socket.io": "^4.7.5",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.7.5"
+  }
+}

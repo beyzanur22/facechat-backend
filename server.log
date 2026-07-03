@@ -1,0 +1,31 @@
+[2026-07-01T11:52:52.349Z] [INFO] facechat-backend dinlemede: http://localhost:3000
+[2026-07-01T11:53:02.354Z] [INFO] socket connected YlC9nN4wikedobDDAAAB
+[2026-07-01T11:53:02.756Z] [INFO] socket connected NbAIwcqRh3G0TZJWAAAD
+[2026-07-01T11:53:03.459Z] [INFO] socket disconnected YlC9nN4wikedobDDAAAB
+[2026-07-01T11:53:03.459Z] [INFO] socket disconnected NbAIwcqRh3G0TZJWAAAD
+[2026-07-01T11:53:03.466Z] [INFO] socket connected vkTwHIEFOLZnl7fUAAAG
+[2026-07-01T11:53:03.467Z] [INFO] socket connected KUDahrSWFpE0cf2mAAAH
+[2026-07-01T11:53:03.784Z] [INFO] socket disconnected vkTwHIEFOLZnl7fUAAAG
+[2026-07-01T11:53:03.785Z] [INFO] socket disconnected KUDahrSWFpE0cf2mAAAH
+[2026-07-01T11:53:03.944Z] [INFO] socket connected FEjyi5fNqgWQeic2AAAK
+[2026-07-01T11:53:03.946Z] [INFO] socket connected LCg0Uw4ZbIyDR0FtAAAL
+[2026-07-01T11:53:04.252Z] [INFO] socket disconnected FEjyi5fNqgWQeic2AAAK
+[2026-07-01T11:53:04.252Z] [INFO] socket disconnected LCg0Uw4ZbIyDR0FtAAAL
+[2026-07-01T11:53:04.413Z] [INFO] socket connected sNCSlTgMbl7cgKtkAAAO
+[2026-07-01T11:53:04.414Z] [INFO] socket connected 5YlxTKbZsbodBXR2AAAP
+[2026-07-01T11:53:04.429Z] [INFO] report eşiği aşıldı, otomatik ban uygulandı {
+  reportedDeviceId: 'victim-1782906783459',
+  banResult: { permanent: false, expiresAt: '2026-07-01T12:53:04.423Z' }
+}
+[2026-07-01T11:53:04.725Z] [INFO] socket disconnected sNCSlTgMbl7cgKtkAAAO
+[2026-07-01T11:53:04.726Z] [INFO] socket disconnected 5YlxTKbZsbodBXR2AAAP
+[2026-07-01T11:53:04.883Z] [INFO] socket connected MEEFfyWygaGjimIiAAAR
+[2026-07-01T11:53:05.593Z] [INFO] socket disconnected MEEFfyWygaGjimIiAAAR
+[2026-07-01T11:53:05.598Z] [INFO] socket connected LYrtilttfXqMNSLIAAAU
+[2026-07-01T11:53:05.599Z] [INFO] socket connected LB6l7xekKqJPIDELAAAV
+[2026-07-01T11:53:06.917Z] [INFO] socket disconnected LYrtilttfXqMNSLIAAAU
+[2026-07-01T11:53:06.917Z] [INFO] socket disconnected LB6l7xekKqJPIDELAAAV
+[2026-07-01T11:54:23.896Z] [INFO] socket connected 10DNIas-2JAIG1ouAAAX
+[2026-07-01T11:54:25.995Z] [INFO] socket connected 7BpirXOQv9XyxcXMAAAZ
+[2026-07-01T12:00:42.433Z] [INFO] socket disconnected 10DNIas-2JAIG1ouAAAX
+[2026-07-01T12:00:42.436Z] [INFO] socket disconnected 7BpirXOQv9XyxcXMAAAZ
