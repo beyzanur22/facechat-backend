@@ -1,5 +1,3 @@
-const queue = require('./queue');
-
 function genderMatches(filterGender, actualGender) {
   return !filterGender || filterGender === 'any' || filterGender === actualGender;
 }
@@ -8,9 +6,7 @@ function regionMatches(filterRegion, actualRegion) {
   return !filterRegion || filterRegion === 'any' || filterRegion === actualRegion;
 }
 
-/**
- * candidateEntry ile newEntry karşılıklı filtre uyumlu mu?
- */
+/** İki aday karşılıklı filtre uyumlu mu? (A, B'yi ister VE B, A'yı ister) */
 function isMutualMatch(a, b) {
   return (
     genderMatches(a.filterGender, b.gender) &&
@@ -20,22 +16,4 @@ function isMutualMatch(a, b) {
   );
 }
 
-/**
- * Yeni giren kullanıcı için kuyrukta uygun bir eş arar.
- * isBlockedPair: async (deviceIdA, deviceIdB) => bool — mevcut karşılıklı block kaydı varsa eşleşme atlanır.
- * Dönüş: eşleşen entry veya null.
- */
-async function findMatch(newEntry, isBlockedPair) {
-  const candidates = queue.waitingExcept(newEntry.socketId);
-
-  for (const candidate of candidates) {
-    if (!isMutualMatch(newEntry, candidate)) continue;
-    // eslint-disable-next-line no-await-in-loop
-    if (isBlockedPair && (await isBlockedPair(newEntry.deviceId, candidate.deviceId))) continue;
-    return candidate;
-  }
-
-  return null;
-}
-
-module.exports = { findMatch, isMutualMatch };
+module.exports = { isMutualMatch };

@@ -1,9 +1,8 @@
-const crypto = require('crypto');
+const { clientIpFromExpress, hashIp } = require('../../utils/ip');
 
-/** İstemci IP'sini hashleyip req.ipHash olarak ekler (ban tablosunda ham IP tutulmasın diye). */
+/** İstemci IP'sinin tuzlu hash'ini req.ipHash olarak ekler (ham IP saklanmasın). */
 function ipHash(req, _res, next) {
-  const ip = req.ip || req.socket?.remoteAddress || '';
-  req.ipHash = crypto.createHash('sha256').update(ip).digest('hex');
+  req.ipHash = hashIp(clientIpFromExpress(req));
   next();
 }
 

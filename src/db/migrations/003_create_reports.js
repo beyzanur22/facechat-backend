@@ -5,7 +5,7 @@ exports.up = function up(knex) {
     table.string('reported_device_id').notNullable().index();
     table.string('session_id').notNullable();
     table.string('reason').notNullable();
-    table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('created_at', { useTz: true }).defaultTo(knex.fn.now());
   });
 };
 

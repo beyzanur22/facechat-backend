@@ -1,13 +1,14 @@
 const db = require('../db');
 const config = require('../config');
 const banService = require('./banService');
+const { normalizeReason } = require('../validation/schemas');
 
 async function fileReport({ reporterDeviceId, reportedDeviceId, sessionId, reason }) {
   await db('reports').insert({
     reporter_device_id: reporterDeviceId,
     reported_device_id: reportedDeviceId,
     session_id: sessionId,
-    reason,
+    reason: normalizeReason(reason),
   });
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

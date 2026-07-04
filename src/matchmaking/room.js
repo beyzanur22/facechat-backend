@@ -1,61 +1,70 @@
 const { randomUUID } = require('crypto');
+const redis = require('../redis');
 
 /**
- * Aktif oda/session state yönetimi. RoomState: { sessionId, socketIdA, socketIdB, deviceIdA, deviceIdB, startedAt }
+ * Aktif oda/session state — Redis'te (sunucular arası paylaşımlı).
+ * room:{sessionId} → JSON RoomState
+ * room:socket:{socketId} → sessionId  (ters lookup)
+ * room:device:{deviceId} → sessionId  (reconnect temizliği)
  */
-class RoomManager {
-  constructor() {
-    /** @type {Map<string, object>} sessionId -> RoomState */
-    this.rooms = new Map();
-    /** @type {Map<string, string>} socketId -> sessionId (hızlı ters lookup) */
-    this.socketToSession = new Map();
-  }
+const roomKey = (sid) => `room:${sid}`;
+const socketKey = (sid) => `room:socket:${sid}`;
+const deviceKey = (did) => `room:device:${did}`;
+const ROOM_TTL = 4 * 60 * 60; // 4 saat — uzun görüşme güvenlik ağı
 
-  create(entryA, entryB) {
-    const sessionId = randomUUID();
-    const room = {
-      sessionId,
-      socketIdA: entryA.socketId,
-      socketIdB: entryB.socketId,
-      deviceIdA: entryA.deviceId,
-      deviceIdB: entryB.deviceId,
-      startedAt: Date.now(),
-    };
-    this.rooms.set(sessionId, room);
-    this.socketToSession.set(entryA.socketId, sessionId);
-    this.socketToSession.set(entryB.socketId, sessionId);
-    return room;
-  }
-
-  getBySessionId(sessionId) {
-    return this.rooms.get(sessionId);
-  }
-
-  getBySocketId(socketId) {
-    const sessionId = this.socketToSession.get(socketId);
-    return sessionId ? this.rooms.get(sessionId) : null;
-  }
-
-  getByDeviceId(deviceId) {
-    for (const room of this.rooms.values()) {
-      if (room.deviceIdA === deviceId || room.deviceIdB === deviceId) return room;
-    }
-    return null;
-  }
-
-  otherSocketId(sessionId, socketId) {
-    const room = this.rooms.get(sessionId);
-    if (!room) return null;
-    return room.socketIdA === socketId ? room.socketIdB : room.socketIdA;
-  }
-
-  end(sessionId) {
-    const room = this.rooms.get(sessionId);
-    if (!room) return;
-    this.socketToSession.delete(room.socketIdA);
-    this.socketToSession.delete(room.socketIdB);
-    this.rooms.delete(sessionId);
-  }
+async function create(entryA, entryB) {
+  const sessionId = randomUUID();
+  const room = {
+    sessionId,
+    socketIdA: entryA.socketId,
+    socketIdB: entryB.socketId,
+    deviceIdA: entryA.deviceId,
+    deviceIdB: entryB.deviceId,
+    startedAt: Date.now(),
+  };
+  await redis
+    .multi()
+    .set(roomKey(sessionId), JSON.stringify(room), 'EX', ROOM_TTL)
+    .set(socketKey(entryA.socketId), sessionId, 'EX', ROOM_TTL)
+    .set(socketKey(entryB.socketId), sessionId, 'EX', ROOM_TTL)
+    .set(deviceKey(entryA.deviceId), sessionId, 'EX', ROOM_TTL)
+    .set(deviceKey(entryB.deviceId), sessionId, 'EX', ROOM_TTL)
+    .exec();
+  return room;
 }
 
-module.exports = new RoomManager();
+async function getBySessionId(sessionId) {
+  const raw = await redis.get(roomKey(sessionId));
+  return raw ? JSON.parse(raw) : null;
+}
+
+async function getBySocketId(socketId) {
+  const sessionId = await redis.get(socketKey(socketId));
+  return sessionId ? getBySessionId(sessionId) : null;
+}
+
+async function getByDeviceId(deviceId) {
+  const sessionId = await redis.get(deviceKey(deviceId));
+  return sessionId ? getBySessionId(sessionId) : null;
+}
+
+async function otherSocketId(sessionId, socketId) {
+  const room = await getBySessionId(sessionId);
+  if (!room) return null;
+  return room.socketIdA === socketId ? room.socketIdB : room.socketIdA;
+}
+
+async function end(sessionId) {
+  const room = await getBySessionId(sessionId);
+  if (!room) return;
+  await redis
+    .multi()
+    .del(roomKey(sessionId))
+    .del(socketKey(room.socketIdA))
+    .del(socketKey(room.socketIdB))
+    .del(deviceKey(room.deviceIdA))
+    .del(deviceKey(room.deviceIdB))
+    .exec();
+}
+
+module.exports = { create, getBySessionId, getBySocketId, getByDeviceId, otherSocketId, end };

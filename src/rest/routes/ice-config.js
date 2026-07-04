@@ -1,11 +1,11 @@
 const express = require('express');
+const { getIceServers } = require('../../webrtc/iceServers');
 
 const router = express.Router();
 
-// Faz 2/4'te TURN credential'ları (coturn use-auth-secret) buraya eklenecek.
-// Android tarafı bu listeyi match-found payload'ından aldığı için kod değişikliği gerekmez.
+// İstemci bu listeyi hem buradan hem match-found payload'ından alabilir.
 router.get('/', (_req, res) => {
-  res.json({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  res.json({ iceServers: getIceServers() });
 });
 
 module.exports = router;

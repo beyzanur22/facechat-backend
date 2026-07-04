@@ -1,18 +1,22 @@
-const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 
-const dbDir = path.dirname(config.dbFilename);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Fail-fast: bağlantı adresi yoksa uygulama açılmadan, net bir mesajla dur.
+if (!config.databaseUrl) {
+  throw new Error(
+    'DATABASE_URL tanımlı değil. .env dosyanıza Postgres bağlantı adresini ekleyin ' +
+      '(ör. DATABASE_URL=postgres://user:pass@host:5432/dbname).'
+  );
 }
 
 module.exports = {
-  client: 'better-sqlite3',
+  client: 'pg',
   connection: {
-    filename: config.dbFilename,
+    connectionString: config.databaseUrl,
+    // Bulut Postgres (Neon/Render/Supabase) SSL bekler.
+    ssl: config.dbSsl ? { rejectUnauthorized: false } : false,
   },
-  useNullAsDefault: true,
+  pool: { min: 2, max: 10 },
   migrations: {
     directory: path.join(__dirname, 'migrations'),
   },

@@ -5,8 +5,8 @@ exports.up = function up(knex) {
     table.string('ip_hash').nullable().index();
     table.string('reason').notNullable();
     table.integer('report_count').notNullable().defaultTo(0);
-    table.timestamp('banned_at').defaultTo(knex.fn.now());
-    table.timestamp('expires_at').nullable();
+    table.timestamp('banned_at', { useTz: true }).defaultTo(knex.fn.now());
+    table.timestamp('expires_at', { useTz: true }).nullable();
   });
 };
 

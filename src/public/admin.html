@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FaceChat — Moderasyon Paneli</title>
+<style>
+  :root { --bg:#0f1117; --surface:#1a1d27; --surface2:#232734; --border:#2e3444; --text:#e6e8ef; --muted:#8b90a0; --accent:#7c5cff; --danger:#ff5c72; --ok:#3ddc84; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,Segoe UI,Roboto,sans-serif; padding:24px; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:20px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .card h2 { font-size:14px; margin:0 0 12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  input, button { font:inherit; border-radius:8px; border:1px solid var(--border); padding:8px 12px; }
+  input { background:var(--surface2); color:var(--text); }
+  button { background:var(--accent); color:#fff; border:none; cursor:pointer; }
+  button.ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  button.danger { background:var(--danger); }
+  button:hover { opacity:.9; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); }
+  th { color:var(--muted); font-weight:600; }
+  .stat { display:inline-block; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 18px; margin-right:12px; }
+  .stat b { display:block; font-size:22px; }
+  .stat span { color:var(--muted); font-size:12px; }
+  code { background:var(--surface2); padding:2px 6px; border-radius:5px; font-size:12px; }
+  .empty { color:var(--muted); font-size:13px; padding:8px 0; }
+  .err { color:var(--danger); font-size:13px; }
+</style>
+</head>
+<body>
+  <h1>🛡️ FaceChat Moderasyon Paneli</h1>
+  <div class="sub">Admin token ile bağlan → banları/şikayetleri gör, elle ban/unban yap.</div>
+
+  <div class="card">
+    <div class="row">
+      <input id="token" type="password" placeholder="ADMIN_TOKEN" style="min-width:280px" />
+      <button onclick="saveToken()">Bağlan</button>
+      <span id="authState" class="sub" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Genel Durum</h2>
+    <div id="stats"><span class="empty">Bağlan ve "Yenile"ye bas.</span></div>
+    <div style="margin-top:12px"><button class="ghost" onclick="loadAll()">↻ Yenile</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Elle Ban</h2>
+    <div class="row">
+      <input id="banDev" placeholder="deviceId" style="min-width:240px" />
+      <input id="banReason" placeholder="neden (ops.)" />
+      <input id="banDur" placeholder="dakika (boş=süresiz)" type="number" style="width:170px" />
+      <button class="danger" onclick="doBan()">Banla</button>
+    </div>
+    <div id="banMsg" class="sub" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h2>En Çok Şikayet Edilenler (son 24s)</h2>
+    <div id="summary"><span class="empty">—</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Aktif Banlar</h2>
+    <div id="bans"><span class="empty">—</span></div>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+function saveToken(){ localStorage.setItem('fc_admin_token', $('token').value.trim()); $('authState').textContent='token kaydedildi'; loadAll(); }
+function token(){ return $('token').value.trim() || localStorage.getItem('fc_admin_token') || ''; }
+async function api(path, opts={}){
+  const res = await fetch(path, { ...opts, headers: { 'content-type':'application/json', authorization: 'Bearer '+token(), ...(opts.headers||{}) } });
+  if(res.status===401){ $('authState').innerHTML='<span class="err">Yetkisiz — token yanlış</span>'; throw new Error('401'); }
+  return res.json();
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+async function loadStats(){
+  const s = await api('/api/admin/stats');
+  $('stats').innerHTML = `
+    <div class="stat"><b>${s.users}</b><span>kullanıcı</span></div>
+    <div class="stat"><b>${s.bans}</b><span>toplam ban</span></div>
+    <div class="stat"><b>${s.reports}</b><span>toplam şikayet</span></div>`;
+}
+async function loadSummary(){
+  const rows = await api('/api/admin/reports/summary?hours=24&limit=50');
+  if(!rows.length){ $('summary').innerHTML='<span class="empty">Son 24 saatte şikayet yok.</span>'; return; }
+  $('summary').innerHTML = '<table><tr><th>deviceId</th><th>şikayet</th><th></th></tr>' +
+    rows.map(r=>`<tr><td><code>${esc(r.reported_device_id)}</code></td><td>${r.count}</td>
+      <td><button class="danger" onclick="quickBan('${esc(r.reported_device_id)}')">Banla</button></td></tr>`).join('') + '</table>';
+}
+async function loadBans(){
+  const rows = await api('/api/admin/bans');
+  if(!rows.length){ $('bans').innerHTML='<span class="empty">Aktif ban yok.</span>'; return; }
+  $('bans').innerHTML = '<table><tr><th>deviceId</th><th>neden</th><th>bitiş</th><th></th></tr>' +
+    rows.map(b=>`<tr><td><code>${esc(b.device_id)}</code></td><td>${esc(b.reason)}</td>
+      <td>${b.expires_at?esc(b.expires_at):'süresiz'}</td>
+      <td><button class="ghost" onclick="doUnban('${esc(b.device_id)}')">Kaldır</button></td></tr>`).join('') + '</table>';
+}
+async function loadAll(){ try{ await loadStats(); await loadSummary(); await loadBans(); $('authState').textContent='bağlı ✓'; }catch(e){} }
+
+async function doBan(){
+  const deviceId=$('banDev').value.trim(); if(!deviceId) return;
+  const body={ deviceId, reason:$('banReason').value.trim()||undefined, durationMinutes:$('banDur').value?Number($('banDur').value):undefined };
+  const r=await api('/api/admin/ban',{method:'POST',body:JSON.stringify(body)});
+  $('banMsg').textContent = r.ok ? ('Banlandı: '+deviceId+(r.expiresAt?(' (bitiş '+r.expiresAt+')'):' (süresiz)')) : 'hata';
+  loadAll();
+}
+function quickBan(id){ $('banDev').value=id; $('banReason').value='moderation'; doBan(); }
+async function doUnban(id){ await api('/api/admin/unban',{method:'POST',body:JSON.stringify({deviceId:id})}); loadAll(); }
+
+// Sayfa açılışında kayıtlı token'ı yükle
+const saved = localStorage.getItem('fc_admin_token'); if(saved){ $('token').value=saved; loadAll(); }
+</script>
+</body>
+</html>
