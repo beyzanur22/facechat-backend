@@ -71,7 +71,7 @@ Base: `/api` — Content-Type: `application/json`
 | POST | `/api/ban-check` | `{ deviceId }` | `{ isBanned, reason?, expiresAt? }` | Uygulama açılışında çağrılır. |
 | POST | `/api/report` | `{ reportToken, reason }` | `{ ok, reportCount, banResult }` | ✅ `reportToken` (match-found'dan) doğrulanır → sadece eşleştiğin kişiyi raporlarsın (IDOR kapalı). |
 | POST | `/api/block` | `{ reportToken }` | `{ ok }` | ✅ `reportToken` doğrulanır (IDOR kapalı). |
-| POST | `/api/moderation-flag` | `{ deviceId, sessionId, imageBase64 }` | `{ flagged, forceDisconnect }` | İstemci ML şüphesinde çağırır. |
+| POST | `/api/moderation-flag` | `{ reportToken, imageBase64 }` | `{ flagged, forceDisconnect }` | İstemci ML şüphesinde çağırır. `reportToken` doğrulanır (framing kapalı), boyut+hız limitli. Şüpheli içerik peer'a atfedilir. |
 
 ---
 

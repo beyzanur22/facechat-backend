@@ -53,6 +53,13 @@ app.use('/api/admin', adminRoutes);
 // Basit moderasyon paneli (statik HTML; API çağrıları ADMIN_TOKEN ister).
 app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
+// Merkezi hata yakalayıcı — beklenmedik route hatalarında sızıntısız temiz JSON döner.
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  logger.error('unhandled route error:', err);
+  res.status(500).json({ error: 'Sunucu hatası' });
+});
+
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
   cors: config.corsOrigins.length ? { origin: config.corsOrigins } : { origin: '*' },

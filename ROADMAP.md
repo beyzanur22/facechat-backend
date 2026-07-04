@@ -42,9 +42,13 @@
 - [ ] **G6b — moderation-flag sertleştir**: auth + ayrı sıkı rate-limit + boyut sınırı
 - [x] Report/block server-side kanıtı (Faz 2 reportToken ile) ✅
 - [x] **Admin moderasyon API + görsel panel** (`/admin`): stats, ban/şikayet listesi, en-çok-raporlananlar, elle ban/unban + cache invalidation, token-korumalı (fail-closed) — test geçti ✅
-- [ ] **CSAM/güvenlik**: şüpheli içerik tespit + raporlama akışı, otomatik disconnect
-- [ ] **Abuse/velocity limitleri**: cihaz başına join/skip hız sınırı, tekrarlanan report tespiti
-- [ ] **Play Integrity / device attestation** hazırlığı (backend doğrulama ucu)
+- [x] **moderation-flag sertleştirme**: reportToken zorunlu (framing/IDOR kapalı) + boyut (413) + per-device velocity (429) — test geçti ✅
+- [x] **Abuse/velocity limitleri** (`velocityService.js`): join-queue cihaz başına 100/60s, modflag 30/60s ✅
+- [x] **Merkezi hata yakalayıcı** (server.js) — beklenmedik route hatalarında temiz JSON ✅
+- [ ] **Aktif AI moderasyon** (Sightengine + Android ML Kit) — istemci frame yakalamaya bağlı → Android fazıyla
+- [ ] **Play Integrity / device attestation** — Android SDK + backend doğrulama → Android fazıyla
+
+> **BACKEND FAZ 3 (bağımsız kısım) TAMAM.** Kalan iki madde (AI moderasyon, Play Integrity) Android istemcisine bağlı, onunla birlikte gelir.
 
 ## FAZ 4 — Gözlemlenebilirlik, Dayanıklılık & Kalite
 - [ ] **Yapılandırılmış log** (pino) + correlation/request ID + env log seviyesi (`logger.js` yerine)

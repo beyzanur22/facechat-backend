@@ -8,6 +8,7 @@ const logger = require('../utils/logger');
 const { getIceServers } = require('../webrtc/iceServers');
 const { clientIpFromSocket, hashIp } = require('../utils/ip');
 const reportTokenService = require('../services/reportTokenService');
+const velocityService = require('../services/velocityService');
 const { createRateLimiter } = require('./rateLimit');
 const { validateJoinQueue } = require('../validation/schemas');
 
@@ -50,6 +51,12 @@ function registerSocketHandlers(io) {
           return;
         }
         const { deviceId, nickname, gender, region, filterGender, filterRegion } = parsed.value;
+
+        // Cihaz bazlı hız limiti (yeniden bağlanarak per-socket limiti aşmayı önler).
+        if (!(await velocityService.hit(deviceId, 'join', 60, 100))) {
+          socket.emit('error', { message: 'Bu cihazdan çok fazla istek, lütfen bekleyin' });
+          return;
+        }
 
         const ipHash = getClientIpHash(socket);
         const ban = await banService.isBanned(deviceId, ipHash);
