@@ -37,4 +37,20 @@ async function getPremium(deviceId) {
   return isPremium;
 }
 
-module.exports = { findOrCreateByDevice, linkAccount, getPremium };
+/**
+ * KVKK "hesabımı sil" — hard delete DEĞİL. Satır (device_id, ban geçmişi) kalır çünkü:
+ * 1) bans/reports/blocks tabloları buna FK ile bağlı (RESTRICT) — silinirse hata alınır,
+ * 2) banlı biri hesabını silip aynı cihazdan ban'dan kaçamasın (platform güvenliği).
+ * Sadece kişisel alanlar (email/isim/google bağlantısı) temizlenir.
+ */
+async function softDeleteUser(deviceId) {
+  await db('users').where({ device_id: deviceId }).update({
+    email: null,
+    display_name: null,
+    google_id: null,
+    deleted_at: db.fn.now(),
+  });
+  await redis.del(premiumCacheKey(deviceId));
+}
+
+module.exports = { findOrCreateByDevice, linkAccount, getPremium, softDeleteUser };

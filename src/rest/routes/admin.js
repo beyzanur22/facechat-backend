@@ -46,7 +46,7 @@ router.post('/ban', async (req, res) => {
   const { deviceId, reason, durationMinutes } = req.body || {};
   if (!deviceId) return res.status(400).json({ error: 'deviceId zorunlu' });
   try {
-    res.json({ ok: true, ...(await admin.manualBan(deviceId, reason, durationMinutes)) });
+    res.json({ ok: true, ...(await admin.manualBan(deviceId, reason, durationMinutes, req.ipHash)) });
   } catch (err) {
     logger.error('admin/ban', err);
     res.status(500).json({ error: 'ban uygulanamadı' });
@@ -57,10 +57,19 @@ router.post('/unban', async (req, res) => {
   const { deviceId } = req.body || {};
   if (!deviceId) return res.status(400).json({ error: 'deviceId zorunlu' });
   try {
-    res.json({ ok: true, ...(await admin.unban(deviceId)) });
+    res.json({ ok: true, ...(await admin.unban(deviceId, req.ipHash)) });
   } catch (err) {
     logger.error('admin/unban', err);
     res.status(500).json({ error: 'unban yapılamadı' });
+  }
+});
+
+router.get('/audit-log', async (req, res) => {
+  try {
+    res.json(await admin.recentAuditLog(Number(req.query.limit) || 50));
+  } catch (err) {
+    logger.error('admin/audit-log', err);
+    res.status(500).json({ error: 'audit log alınamadı' });
   }
 });
 

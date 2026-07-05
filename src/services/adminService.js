@@ -33,7 +33,22 @@ async function reportSummary(hours = 24, limit = 50) {
     .limit(limit);
 }
 
-async function manualBan(deviceId, reason, durationMinutes) {
+/** Her admin işlemini audit_log'a yazar — "kim ne zaman neyi neden yaptı" sorusuna cevap. */
+async function logAudit(adminIdentifier, action, targetDeviceId, reason, metadata) {
+  await db('audit_log').insert({
+    admin_identifier: adminIdentifier || 'unknown',
+    action,
+    target_device_id: targetDeviceId || null,
+    reason: reason || null,
+    metadata: metadata ? JSON.stringify(metadata) : null,
+  });
+}
+
+async function recentAuditLog(limit = 50) {
+  return db('audit_log').orderBy('created_at', 'desc').limit(limit);
+}
+
+async function manualBan(deviceId, reason, durationMinutes, adminIdentifier) {
   const expiresAt = durationMinutes
     ? new Date(Date.now() + Number(durationMinutes) * 60000).toISOString()
     : null; // süresiz
@@ -45,13 +60,23 @@ async function manualBan(deviceId, reason, durationMinutes) {
     expires_at: expiresAt,
   });
   await banService.invalidateBanCache(deviceId);
+  await logAudit(adminIdentifier, 'ban', deviceId, reason, { durationMinutes, expiresAt });
   return { deviceId, expiresAt };
 }
 
-async function unban(deviceId) {
+async function unban(deviceId, adminIdentifier) {
   const removed = await db('bans').where({ device_id: deviceId }).del();
   await banService.invalidateBanCache(deviceId);
+  await logAudit(adminIdentifier, 'unban', deviceId, null, { removed });
   return { deviceId, removed };
 }
 
-module.exports = { stats, listBans, recentReports, reportSummary, manualBan, unban };
+module.exports = {
+  stats,
+  listBans,
+  recentReports,
+  reportSummary,
+  manualBan,
+  unban,
+  recentAuditLog,
+};

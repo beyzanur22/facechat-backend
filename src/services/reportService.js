@@ -4,12 +4,21 @@ const banService = require('./banService');
 const { normalizeReason } = require('../validation/schemas');
 
 async function fileReport({ reporterDeviceId, reportedDeviceId, sessionId, reason }) {
-  await db('reports').insert({
-    reporter_device_id: reporterDeviceId,
-    reported_device_id: reportedDeviceId,
-    session_id: sessionId,
-    reason: normalizeReason(reason),
-  });
+  try {
+    await db('reports').insert({
+      reporter_device_id: reporterDeviceId,
+      reported_device_id: reportedDeviceId,
+      session_id: sessionId,
+      reason: normalizeReason(reason),
+    });
+  } catch (err) {
+    // 23505 = unique_violation (Postgres). "reports_unique_per_session" index'i bu çiftin
+    // aynı session'da tekrar rapor açmasını DB seviyesinde engelliyor — hata değil, no-op kabul et.
+    if (err.code === '23505') {
+      return { reportCount: null, banResult: null, duplicate: true };
+    }
+    throw err;
+  }
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const [{ count }] = await db('reports')

@@ -80,8 +80,8 @@
 - [ ] **Process-death güvenliği** (SavedStateHandle / kalıcı state)
 - [ ] **Build variants** (dev/staging/prod) — `Constants.SIGNALING_URL` hardcode kaldır
 
-## FAZ 7 — Android: Özellikler
-- [ ] 🔴 **Report/Block UI** — peer kartına/ekrana buton; `signalingClient.report()` + `block` event bağla (backend hazır, UI yok)
+## FAZ 7 — Android: Özellikler (BAŞLADI)
+- [x] 🔴 **Report/Block UI** — peer kartı altına Şikayet/Engelle butonları, neden diyaloğu + onay, `signalingClient.report()`/`block()`, reportToken parse. assembleDebug BAŞARILI ✅
 - [ ] **Mikrofon mute** butonu (şu an sadece kamera toggle)
 - [ ] **Ülke/bölge filtresi UI** (`region`/`filterRegion` hardcode kaldır)
 - [ ] **Google login ekranı** — supabase-kt → token al → `/api/auth/sync` çağır
