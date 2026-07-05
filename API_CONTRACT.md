@@ -72,6 +72,10 @@ Base: `/api` — Content-Type: `application/json`
 | POST | `/api/report` | `{ reportToken, reason }` | `{ ok, reportCount, banResult }` | ✅ `reportToken` (match-found'dan) doğrulanır → sadece eşleştiğin kişiyi raporlarsın (IDOR kapalı). |
 | POST | `/api/block` | `{ reportToken }` | `{ ok }` | ✅ `reportToken` doğrulanır (IDOR kapalı). |
 | POST | `/api/moderation-flag` | `{ reportToken, imageBase64 }` | `{ flagged, forceDisconnect }` | İstemci ML şüphesinde çağırır. `reportToken` doğrulanır (framing kapalı), boyut+hız limitli. Şüpheli içerik peer'a atfedilir. |
+| POST | `/api/auth/sync` | `{ deviceId }` + `Authorization: Bearer <supabase token>` | `{ linked, email, displayName, isPremium }` | Google ile giriş yapınca çağrılır — hesabı `deviceId`'ye bağlar. |
+| GET | `/api/auth/status?deviceId=` | — | `{ isPremium }` | Misafir dahil, giriş gerektirmez. |
+| DELETE | `/api/user` | `{ deviceId }` | `{ ok }` | "Hesabımı sil" (KVKK). Hard delete DEĞİL: kişisel alanlar (email/isim) temizlenir, `deviceId` + ban geçmişi kalır. |
+| POST | `/api/premium/redeem` | `{ deviceId, provider, productId, purchaseToken }` | `{ ok, expiresAt }` | Satın alma makbuzunu doğrular. `provider`: `google_play\|app_store\|stripe`. **Play/App Store servis hesabı kurulana kadar her zaman reddeder** (fail-closed) — henüz test edilemez. |
 
 ---
 
@@ -85,11 +89,15 @@ Base: `/api` — Content-Type: `application/json`
 
 ---
 
-## 4. PLANLANAN — Faz 1 auth şeması (henüz YOK, ikiniz de buna göre kodlayın)
+## 4. `reportToken` — ŞU AN AKTİF (bu bölüm eskiden "planlanan" diye işaretliydi, artık canlı)
 
-Report/block istismarını kapatmak için oturum tabanlı imza gelecek:
-- `join-queue` başarılı olunca sunucu `match-found` içinde kısa ömürlü bir `sessionToken` döndürecek.
-- `report`/`block` çağrılarında bu token gönderilecek; sunucu "bu kişi gerçekten o session'daydı" doğrulamasını yapacak.
-- **İki istemci de** bu token'ı saklayıp geri göndermeye hazır yazılmalı.
+- `join-queue` eşleşince sunucu `match-found` içinde kısa ömürlü (1 saat, Redis'te) bir `reportToken` döndürür.
+- `report`/`block` çağrılarında bu token gönderilir; sunucu "bu kişi gerçekten o eşleşmedeydi" doğrulamasını yapar (IDOR kapalı).
+- **İki istemci de** bu token'ı `match-found`'dan alıp saklamalı, REST çağrılarında `deviceId` DEĞİL bu token gönderilmeli.
 
-> Bu bölüm hayata geçtiğinde protokol **v2** olur ve bu dosya güncellenir.
+## 5. PLANLANAN — Premium doğrulama
+
+`POST /api/premium/redeem` endpoint'i hazır ama Play Console/App Store Connect servis hesabı
+henüz kurulmadı — bağlanana kadar her çağrı `{ ok: false }` döner. Android/Web tarafı satın
+alma akışını bu endpoint'e göre yazabilir, sadece gerçek doğrulama backend'de eklenene kadar
+test/production satın alma çalışmaz.

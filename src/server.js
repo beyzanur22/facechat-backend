@@ -20,6 +20,8 @@ const iceConfigRoutes = require('./rest/routes/ice-config');
 const moderationFlagRoutes = require('./rest/routes/moderation-flag');
 const authRoutes = require('./rest/routes/auth');
 const adminRoutes = require('./rest/routes/admin');
+const userRoutes = require('./rest/routes/user');
+const premiumRoutes = require('./rest/routes/premium');
 
 const app = express();
 // Render/proxy arkasında gerçek istemci IP'si için (rate-limit + ban tutarlılığı kritik).
@@ -49,6 +51,8 @@ app.use('/api/ice-config', iceConfigRoutes);
 app.use('/api/moderation-flag', moderationFlagRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/premium', premiumRoutes);
 
 // Basit moderasyon paneli (statik HTML; API çağrıları ADMIN_TOKEN ister).
 app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));

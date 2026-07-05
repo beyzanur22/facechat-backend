@@ -38,4 +38,8 @@ module.exports = {
   moderationApiKey: process.env.MODERATION_API_KEY || '',
   autoBanFirstDurationMinutes: Number(process.env.AUTO_BAN_FIRST_DURATION_MINUTES) || 60,
   reportThreshold24h: Number(process.env.REPORT_THRESHOLD_24H) || 3,
+  // Play Console servis hesabı henüz kurulmadı — tanımlı olmadığı sürece premium makbuzları
+  // doğrulanamaz (fail-closed, sahte satın alma kabul edilmez). Kurulunca buraya JSON gelecek.
+  googlePlayServiceAccountJson: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON || '',
+  googlePlayPackageName: process.env.GOOGLE_PLAY_PACKAGE_NAME || '',
 };
