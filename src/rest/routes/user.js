@@ -1,16 +1,17 @@
 const express = require('express');
 const userService = require('../../services/userService');
+const requireDeviceAuth = require('../middleware/deviceAuth');
 const logger = require('../../utils/logger');
 
 const router = express.Router();
 
 /**
  * DELETE /api/user
- * Body: { deviceId }
+ * Body: { deviceId }   Header: Authorization: Bearer <deviceSecret> (bkz. POST /api/device/register)
  * KVKK "hesabımı sil": hard delete DEĞİL — userService.softDeleteUser kişisel alanları
  * (email/isim/google bağlantısı) temizler, device_id + ban/report geçmişi kalır.
  */
-router.delete('/', async (req, res) => {
+router.delete('/', requireDeviceAuth((req) => req.body?.deviceId), async (req, res) => {
   const { deviceId } = req.body || {};
   if (!deviceId) return res.status(400).json({ error: 'deviceId zorunlu' });
   try {

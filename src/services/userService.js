@@ -1,5 +1,6 @@
 const db = require('../db');
 const redis = require('../redis');
+const { generateSecret, hashSecret } = require('../utils/deviceSecret');
 
 // Premium durumu cache'i (ban cache ile aynı mantık: cache-aside + write-through invalidation).
 const premiumCacheKey = (deviceId) => `cache:premium:${deviceId}`;
@@ -9,6 +10,26 @@ const PREMIUM_TTL = 120; // sn
 async function findOrCreateByDevice(deviceId) {
   await db('users').insert({ device_id: deviceId }).onConflict('device_id').ignore();
   return db('users').where({ device_id: deviceId }).first();
+}
+
+/**
+ * Cihaz sahiplik kaydı (IDOR koruması). İstemci deviceId'yi ürettiğinde bir kez çağırır.
+ * Satır yoksa oluşturur; device_secret_hash henüz atanmamışsa atomik olarak "claim" eder
+ * (WHERE device_secret_hash IS NULL) ve düz metin secret'ı SADECE bu ilk claim'de döner.
+ * Zaten claim edilmişse (örn. daha önce Google login ile satır oluşmuşsa) tekrar secret
+ * vermez — aksi halde deviceId'yi bilen herkes sonradan secret alabilirdi.
+ */
+async function registerDevice(deviceId) {
+  await db('users').insert({ device_id: deviceId }).onConflict('device_id').ignore();
+
+  const secret = generateSecret();
+  const secretHash = hashSecret(secret);
+  const claimed = await db('users')
+    .where({ device_id: deviceId, device_secret_hash: null })
+    .update({ device_secret_hash: secretHash })
+    .returning('id');
+
+  return claimed.length > 0 ? { claimed: true, deviceSecret: secret } : { claimed: false };
 }
 
 /** Google (Supabase) hesabını deviceId'ye bağlar / günceller. */
@@ -53,4 +74,4 @@ async function softDeleteUser(deviceId) {
   await redis.del(premiumCacheKey(deviceId));
 }
 
-module.exports = { findOrCreateByDevice, linkAccount, getPremium, softDeleteUser };
+module.exports = { findOrCreateByDevice, registerDevice, linkAccount, getPremium, softDeleteUser };

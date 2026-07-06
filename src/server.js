@@ -22,6 +22,7 @@ const authRoutes = require('./rest/routes/auth');
 const adminRoutes = require('./rest/routes/admin');
 const userRoutes = require('./rest/routes/user');
 const premiumRoutes = require('./rest/routes/premium');
+const deviceRoutes = require('./rest/routes/device');
 
 const app = express();
 // Render/proxy arkasında gerçek istemci IP'si için (rate-limit + ban tutarlılığı kritik).
@@ -53,6 +54,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/premium', premiumRoutes);
+app.use('/api/device', deviceRoutes);
 
 // Basit moderasyon paneli (statik HTML; API çağrıları ADMIN_TOKEN ister).
 app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));

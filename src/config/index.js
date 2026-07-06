@@ -3,6 +3,15 @@ const path = require('path');
 const projectRoot = path.resolve(__dirname, '..', '..');
 require('dotenv').config({ path: path.join(projectRoot, '.env') });
 
+// Fail-fast: tuz tanımlı değilse net mesajla dur (sessizce zayıf sabit değere düşmesin —
+// IP hash'lerinin tahmin edilebilir/rainbow-table'a açık olması ban sisteminin güvenini kırar).
+if (!process.env.IP_HASH_SALT) {
+  throw new Error(
+    'IP_HASH_SALT tanımlı değil. .env dosyanıza rastgele, güçlü bir değer ekleyin ' +
+      '(ör. `node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"` ile üretebilirsiniz).'
+  );
+}
+
 module.exports = {
   port: Number(process.env.PORT) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -24,8 +33,8 @@ module.exports = {
     .filter(Boolean),
   turnUsername: process.env.TURN_USERNAME || '',
   turnCredential: process.env.TURN_CREDENTIAL || '',
-  // IP hash tuzu — ÜRETİMDE mutlaka güçlü rastgele bir değerle .env'e konmalı.
-  ipHashSalt: process.env.IP_HASH_SALT || 'facechat-dev-salt-change-me',
+  // IP hash tuzu — yukarıdaki fail-fast kontrolü sayesinde burada her zaman dolu.
+  ipHashSalt: process.env.IP_HASH_SALT,
   // CORS izinli origin'ler (virgülle). Boşsa herkese izin (dev). Web domain gelince doldur → kilitlenir.
   // Not: Android native istemcide Origin başlığı yok → whitelist onu etkilemez, sadece web'i sınırlar.
   corsOrigins: (process.env.CORS_ORIGINS || '')

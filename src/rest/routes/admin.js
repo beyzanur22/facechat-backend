@@ -1,9 +1,12 @@
 const express = require('express');
 const adminAuth = require('../middleware/adminAuth');
+const adminRateLimiter = require('../middleware/adminRateLimiter');
 const admin = require('../../services/adminService');
+const { validateAdminBan } = require('../../validation/schemas');
 const logger = require('../../utils/logger');
 
 const router = express.Router();
+router.use(adminRateLimiter); // token brute-force'a karşı genel /api limitinden daha sıkı
 router.use(adminAuth); // tüm admin route'ları token ister
 
 router.get('/stats', async (_req, res) => {
@@ -43,8 +46,9 @@ router.get('/reports/summary', async (req, res) => {
 });
 
 router.post('/ban', async (req, res) => {
-  const { deviceId, reason, durationMinutes } = req.body || {};
-  if (!deviceId) return res.status(400).json({ error: 'deviceId zorunlu' });
+  const validated = validateAdminBan(req.body);
+  if (!validated.ok) return res.status(400).json({ error: validated.error });
+  const { deviceId, reason, durationMinutes } = validated.value;
   try {
     res.json({ ok: true, ...(await admin.manualBan(deviceId, reason, durationMinutes, req.ipHash)) });
   } catch (err) {

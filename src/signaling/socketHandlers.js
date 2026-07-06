@@ -10,7 +10,7 @@ const { clientIpFromSocket, hashIp } = require('../utils/ip');
 const reportTokenService = require('../services/reportTokenService');
 const velocityService = require('../services/velocityService');
 const { createRateLimiter } = require('./rateLimit');
-const { validateJoinQueue } = require('../validation/schemas');
+const { validateJoinQueue, validateSdpRelay, validateIceCandidateRelay } = require('../validation/schemas');
 
 // Per-socket, per-event rate limitleri (spam/flood koruması).
 const EVENT_LIMITS = {
@@ -106,20 +106,29 @@ function registerSocketHandlers(io) {
       }
     });
 
-    socket.on('offer', async ({ sessionId, sdp }) => {
+    socket.on('offer', async (payload) => {
       if (limited('offer', false)) return;
+      const parsed = validateSdpRelay(payload);
+      if (!parsed.ok) return;
+      const { sessionId, sdp } = parsed.value;
       const targetSocketId = await rooms.otherSocketId(sessionId, socket.id);
       if (targetSocketId) io.to(targetSocketId).emit('offer', { sessionId, sdp });
     });
 
-    socket.on('answer', async ({ sessionId, sdp }) => {
+    socket.on('answer', async (payload) => {
       if (limited('answer', false)) return;
+      const parsed = validateSdpRelay(payload);
+      if (!parsed.ok) return;
+      const { sessionId, sdp } = parsed.value;
       const targetSocketId = await rooms.otherSocketId(sessionId, socket.id);
       if (targetSocketId) io.to(targetSocketId).emit('answer', { sessionId, sdp });
     });
 
-    socket.on('ice-candidate', async ({ sessionId, candidate }) => {
+    socket.on('ice-candidate', async (payload) => {
       if (limited('ice-candidate', false)) return;
+      const parsed = validateIceCandidateRelay(payload);
+      if (!parsed.ok) return;
+      const { sessionId, candidate } = parsed.value;
       const targetSocketId = await rooms.otherSocketId(sessionId, socket.id);
       if (targetSocketId) io.to(targetSocketId).emit('ice-candidate', { sessionId, candidate });
     });

@@ -1,6 +1,7 @@
 const express = require('express');
 const supabaseAuth = require('../../auth/supabaseAuth');
 const userService = require('../../services/userService');
+const requireDeviceAuth = require('../middleware/deviceAuth');
 const logger = require('../../utils/logger');
 
 const router = express.Router();
@@ -36,10 +37,11 @@ router.post('/sync', async (req, res) => {
 });
 
 /**
- * GET /api/auth/status?deviceId=...
- * Misafir dahil premium durumunu okur (giriş gerektirmez).
+ * GET /api/auth/status?deviceId=...   Header: Authorization: Bearer <deviceSecret>
+ * Misafir dahil premium durumunu okur (Google girişi gerektirmez, ama deviceId sahiplik
+ * kanıtı ister — bkz. POST /api/device/register).
  */
-router.get('/status', async (req, res) => {
+router.get('/status', requireDeviceAuth((req) => req.query?.deviceId), async (req, res) => {
   const { deviceId } = req.query;
   if (!deviceId) return res.status(400).json({ error: 'deviceId zorunlu' });
   try {

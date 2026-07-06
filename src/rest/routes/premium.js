@@ -1,17 +1,18 @@
 const express = require('express');
 const premiumSubscriptionService = require('../../services/premiumSubscriptionService');
+const requireDeviceAuth = require('../middleware/deviceAuth');
 const logger = require('../../utils/logger');
 
 const router = express.Router();
 
 /**
  * POST /api/premium/redeem
- * Body: { deviceId, provider, productId, purchaseToken }
+ * Body: { deviceId, provider, productId, purchaseToken }   Header: Authorization: Bearer <deviceSecret>
  * Android/Web satın alma sonrası makbuzu buraya gönderir; sunucu tarafında doğrulanır.
  * provider: 'google_play' | 'app_store' | 'stripe' (Play/App Store entegrasyonu kurulana
  * kadar doğrulama fail-closed reddeder — bkz. purchaseVerificationService).
  */
-router.post('/redeem', async (req, res) => {
+router.post('/redeem', requireDeviceAuth((req) => req.body?.deviceId), async (req, res) => {
   const { deviceId, provider, productId, purchaseToken } = req.body || {};
   if (!deviceId || !provider || !productId || !purchaseToken) {
     return res.status(400).json({ error: 'deviceId, provider, productId, purchaseToken zorunlu' });
