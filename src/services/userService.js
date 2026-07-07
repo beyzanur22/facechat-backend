@@ -19,8 +19,17 @@ async function findOrCreateByDevice(deviceId) {
  * Zaten claim edilmişse (örn. daha önce Google login ile satır oluşmuşsa) tekrar secret
  * vermez — aksi halde deviceId'yi bilen herkes sonradan secret alabilirdi.
  */
-async function registerDevice(deviceId) {
+async function registerDevice(deviceId, birthdate) {
   await db('users').insert({ device_id: deviceId }).onConflict('device_id').ignore();
+
+  // Doğum tarihi write-once: yalnızca henüz boşsa yazılır (kullanıcı sonradan yaşını
+  // değiştirip yaş kapısını atlayamasın).
+  if (birthdate) {
+    await db('users')
+      .where({ device_id: deviceId })
+      .whereNull('birthdate')
+      .update({ birthdate });
+  }
 
   const secret = generateSecret();
   const secretHash = hashSecret(secret);

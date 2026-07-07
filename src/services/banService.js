@@ -1,6 +1,7 @@
 const db = require('../db');
 const config = require('../config');
 const redis = require('../redis');
+const metrics = require('../observability/metrics');
 
 // --- Ban cache (Redis) ---
 // Her join-queue'da ban kontrolü Postgres'i dövmesin diye sonucu kısa süre cache'leriz.
@@ -63,6 +64,7 @@ async function autoban(deviceId, ipHash, reason, reportCount = 0) {
 
   // WRITE-THROUGH INVALIDATION: yeni ban anında etkili olsun → cache'i temizle.
   await redis.del(banCacheKey(deviceId));
+  metrics.bansTotal.inc();
 
   return { permanent: isRepeatOffender, expiresAt };
 }

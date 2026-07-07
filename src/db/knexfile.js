@@ -16,7 +16,7 @@ module.exports = {
     // Bulut Postgres (Neon/Render/Supabase) SSL bekler.
     ssl: config.dbSsl ? { rejectUnauthorized: false } : false,
   },
-  pool: { min: 2, max: 10 },
+  pool: { min: config.poolMin, max: config.poolMax },
   migrations: {
     directory: path.join(__dirname, 'migrations'),
   },

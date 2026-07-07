@@ -16,6 +16,31 @@ function validateJoinQueue(payload) {
   return { ok: false, error: r.error.issues[0]?.message || 'geçersiz veri' };
 }
 
+// Doğum tarihi — sunucu-tarafı yaş kapısı. Kesin YYYY-MM-DD + geçerli takvim tarihi.
+const birthdateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'birthdate YYYY-MM-DD olmalı')
+  .refine((s) => {
+    const d = new Date(`${s}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.getTime() <= Date.now();
+  }, 'geçersiz doğum tarihi');
+
+function validateBirthdate(value) {
+  const r = birthdateSchema.safeParse(value);
+  if (r.success) return { ok: true, value: r.data };
+  return { ok: false, error: r.error.issues[0]?.message || 'geçersiz doğum tarihi' };
+}
+
+/** YYYY-MM-DD → tam yıl olarak yaş. */
+function computeAge(birthdate) {
+  const b = new Date(`${birthdate}T00:00:00Z`);
+  const now = new Date();
+  let age = now.getUTCFullYear() - b.getUTCFullYear();
+  const m = now.getUTCMonth() - b.getUTCMonth();
+  if (m < 0 || (m === 0 && now.getUTCDate() < b.getUTCDate())) age -= 1;
+  return age;
+}
+
 // Şikayet nedeni whitelist'i — DB'ye ham/serbest string yazılmasın.
 const REPORT_REASONS = ['nudity', 'harassment', 'spam', 'minor', 'violence', 'other', 'unspecified'];
 function normalizeReason(reason) {
@@ -73,4 +98,6 @@ module.exports = {
   validateAdminBan,
   validateSdpRelay,
   validateIceCandidateRelay,
+  validateBirthdate,
+  computeAge,
 };

@@ -3,6 +3,7 @@ const rooms = require('./room');
 const matcher = require('./matcher');
 const lock = require('./lock');
 const logger = require('../utils/logger');
+const metrics = require('../observability/metrics');
 
 /**
  * Atomik eşleştirme: kilit altında uygun eş arar.
@@ -27,6 +28,7 @@ async function joinQueue(entry, isBlockedPair) {
 
       await queue.remove(candidate.socketId);
       const room = await rooms.create(entry, candidate);
+      metrics.matchesTotal.inc();
       return { match: candidate, room };
     }
 

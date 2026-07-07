@@ -11,6 +11,9 @@ const reportTokenService = require('../services/reportTokenService');
 const velocityService = require('../services/velocityService');
 const { createRateLimiter } = require('./rateLimit');
 const { validateJoinQueue, validateSdpRelay, validateIceCandidateRelay } = require('../validation/schemas');
+const metrics = require('../observability/metrics');
+const sentry = require('../observability/sentry');
+const connectionLimiter = require('./connectionLimiter');
 
 // Per-socket, per-event rate limitleri (spam/flood koruması).
 const EVENT_LIMITS = {
@@ -33,6 +36,7 @@ function getClientIpHash(socket) {
 function registerSocketHandlers(io) {
   io.on('connection', (socket) => {
     logger.info('socket connected', socket.id);
+    metrics.socketConnectionsTotal.inc();
 
     const allow = createRateLimiter(EVENT_LIMITS);
     const limited = (event, notify) => {
@@ -102,6 +106,7 @@ function registerSocketHandlers(io) {
         });
       } catch (err) {
         logger.error('join-queue error', err);
+        sentry.captureException(err);
         socket.emit('error', { message: 'join-queue işlenemedi' });
       }
     });
@@ -161,6 +166,7 @@ function registerSocketHandlers(io) {
         await rooms.end(sessionId);
       } catch (err) {
         logger.error('block error', err);
+        sentry.captureException(err);
       }
     });
 
@@ -190,10 +196,12 @@ function registerSocketHandlers(io) {
         }
       } catch (err) {
         logger.error('report error', err);
+        sentry.captureException(err);
       }
     });
 
     socket.on('disconnect', async () => {
+      await connectionLimiter.release(socket);
       await queue.remove(socket.id);
       const room = await rooms.getBySocketId(socket.id);
       if (room) await endSession(io, room.sessionId, socket.id, 'disconnect');

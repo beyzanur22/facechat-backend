@@ -1,5 +1,6 @@
 const { randomUUID } = require('crypto');
 const redis = require('../redis');
+const metrics = require('../observability/metrics');
 
 /**
  * Aktif oda/session state — Redis'te (sunucular arası paylaşımlı).
@@ -30,6 +31,7 @@ async function create(entryA, entryB) {
     .set(deviceKey(entryA.deviceId), sessionId, 'EX', ROOM_TTL)
     .set(deviceKey(entryB.deviceId), sessionId, 'EX', ROOM_TTL)
     .exec();
+  await metrics.roomOpened();
   return room;
 }
 
@@ -65,6 +67,7 @@ async function end(sessionId) {
     .del(deviceKey(room.deviceIdA))
     .del(deviceKey(room.deviceIdB))
     .exec();
+  await metrics.roomClosed();
 }
 
 module.exports = { create, getBySessionId, getBySocketId, getByDeviceId, otherSocketId, end };

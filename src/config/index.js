@@ -15,11 +15,22 @@ if (!process.env.IP_HASH_SALT) {
 module.exports = {
   port: Number(process.env.PORT) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
+  // Sürüm etiketi (Sentry release izleme için — Render commit SHA'sını verebilir).
+  release: process.env.RELEASE || process.env.RENDER_GIT_COMMIT || '',
+  // Sentry DSN — boşsa hata izleme kapalı (env-gated, fail-open).
+  sentryDsn: process.env.SENTRY_DSN || '',
   // Postgres bağlantı adresi (ör. postgres://user:pass@host:5432/dbname).
   // Render/Neon/Supabase panelinden alınır ve .env'e yazılır.
   databaseUrl: process.env.DATABASE_URL || '',
   // Bulut Postgres sağlayıcıları SSL ister; kendi lokal Postgres'inde DB_SSL=false yapabilirsin.
   dbSsl: process.env.DB_SSL ? process.env.DB_SSL === 'true' : true,
+  // DB bağlantı havuzu — ölçekte tek yerden ayarlanır (Supabase pooler arkasında).
+  poolMin: Number(process.env.POOL_MIN) || 2,
+  poolMax: Number(process.env.POOL_MAX) || 10,
+  // IP-hash başına eşzamanlı socket bağlantı limiti (flood/DoS koruması).
+  maxConnPerIp: Number(process.env.MAX_CONN_PER_IP) || 20,
+  // Yaş kapısı: bu yaşın altındaki kullanıcılar reddedilir (0 = kapalı).
+  minAge: Number.isFinite(Number(process.env.MIN_AGE)) ? Number(process.env.MIN_AGE) : 18,
   // Redis bağlantı adresi (Upstash panelinden — rediss://... ile başlar).
   // Paylaşımlı kuyruk + Socket.io adapter + ban cache burada tutulur.
   redisUrl: process.env.REDIS_URL || '',
@@ -44,6 +55,7 @@ module.exports = {
   // Admin moderasyon API token'ı. BOŞSA admin API tamamen kapalı (fail-closed). Üretimde güçlü değer.
   adminToken: process.env.ADMIN_TOKEN || '',
   moderationProvider: process.env.MODERATION_PROVIDER || 'none',
+  moderationApiUser: process.env.MODERATION_API_USER || '',
   moderationApiKey: process.env.MODERATION_API_KEY || '',
   autoBanFirstDurationMinutes: Number(process.env.AUTO_BAN_FIRST_DURATION_MINUTES) || 60,
   reportThreshold24h: Number(process.env.REPORT_THRESHOLD_24H) || 3,

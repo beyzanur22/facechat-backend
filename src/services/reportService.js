@@ -2,6 +2,7 @@ const db = require('../db');
 const config = require('../config');
 const banService = require('./banService');
 const { normalizeReason } = require('../validation/schemas');
+const metrics = require('../observability/metrics');
 
 async function fileReport({ reporterDeviceId, reportedDeviceId, sessionId, reason }) {
   try {
@@ -19,6 +20,7 @@ async function fileReport({ reporterDeviceId, reportedDeviceId, sessionId, reaso
     }
     throw err;
   }
+  metrics.reportsTotal.inc();
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const [{ count }] = await db('reports')
