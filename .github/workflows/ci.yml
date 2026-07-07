@@ -8,6 +8,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Testler gerçek DB/Redis'e bağlanmaz (mock/inject) ama config fail-fast IP_HASH_SALT ister;
+    # CI'da .env olmadığı için burada sahte bir değer veriyoruz (üretim sırrı değildir).
+    env:
+      IP_HASH_SALT: ci-dummy-salt-not-a-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
